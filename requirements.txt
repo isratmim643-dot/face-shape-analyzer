@@ -1,5 +1,6 @@
 tensorflow-cpu==2.15.0
-gradio==4.44.0
+gradio==3.50.2
+huggingface_hub==0.19.4
 opencv-python-headless
 dlib
 scikit-learn
