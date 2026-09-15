@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Face Shape Analyzer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#f0eef8;color:#1a1a2e;min-height:100vh}
+header{background:#1a1a2e;padding:18px 32px;display:flex;align-items:center;gap:12px}
+header h1{color:#fff;font-size:20px}
+header p{color:#a29bfe;font-size:12px;margin-top:2px}
+.page{max-width:1000px;margin:0 auto;padding:40px 20px}
+.hero{text-align:center;margin-bottom:36px}
+.hero h2{font-size:34px;letter-spacing:-0.5px;margin-bottom:8px}
+.hero h2 em{color:#6c5ce7;font-style:italic}
+.hero p{color:#4a4a6a;font-size:15px;max-width:500px;margin:0 auto}
+.upload-zone{background:#fff;border:2px dashed #c8c4f0;border-radius:16px;padding:48px 24px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:28px;position:relative}
+.upload-zone:hover,.upload-zone.drag{border-color:#6c5ce7;background:#f5f3ff}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-zone .icon{font-size:44px;margin-bottom:12px}
+.upload-zone h3{font-size:17px;margin-bottom:4px}
+.upload-zone p{color:#4a4a6a;font-size:13px}
+.btn{display:block;width:100%;background:#6c5ce7;color:#fff;font-size:16px;font-weight:600;padding:15px;border-radius:12px;border:none;cursor:pointer;margin-bottom:32px;transition:opacity .15s}
+.btn:hover{opacity:.88}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.spinner{display:none;text-align:center;padding:48px}
+.spin{width:44px;height:44px;border:4px solid #e0ddf5;border-top-color:#6c5ce7;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+#results{display:none}
+.result-top{background:#fff;border-radius:16px;border:1px solid #e0ddf5;padding:24px 28px;display:flex;align-items:center;gap:18px;margin-bottom:20px}
+.shape-badge{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.shape-badge.Oval{background:#e8f8f5}
+.shape-badge.Round{background:#e8f3fd}
+.shape-badge.Square{background:#fdf2ef}
+.result-top h2{font-size:26px}.result-top h2 span{color:#6c5ce7}
+.conf-bar{height:6px;background:#e0ddf5;border-radius:3px;width:240px;overflow:hidden;margin-top:8px}
+.conf-fill{height:100%;background:#6c5ce7;border-radius:3px;transition:width 1s ease}
+.val-badge{margin-left:auto;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:500;white-space:nowrap}
+.val-badge.s{background:#e8f8f5;color:#00b894}
+.val-badge.n{background:#fff0ee;color:#e17055}
+.ratios{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+@media(max-width:600px){.ratios{grid-template-columns:repeat(2,1fr)}}
+.ratio-card{background:#fff;border:1px solid #e0ddf5;border-radius:12px;padding:16px;text-align:center}
+.ratio-card .v{font-size:22px;font-weight:700;color:#1a1a2e}
+.ratio-card .l{font-size:11px;color:#4a4a6a;margin-top:3px;line-height:1.4}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+@media(max-width:680px){.two-col{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid #e0ddf5;border-radius:14px;overflow:hidden}
+.card img{width:100%;display:block;max-height:360px;object-fit:contain;background:#111}
+.card-body{padding:18px}
+.card-body h3{font-size:14px;font-weight:600;margin-bottom:14px}
+.prob-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.prob-label{width:58px;font-size:13px;font-weight:500}
+.prob-track{flex:1;height:9px;background:#e0ddf5;border-radius:5px;overflow:hidden}
+.prob-fill{height:100%;border-radius:5px;transition:width 1.2s ease}
+.prob-pct{width:44px;font-size:12px;color:#4a4a6a;text-align:right}
+.rec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px}
+@media(max-width:680px){.rec-grid{grid-template-columns:1fr}}
+.rec-card{background:#fff;border:1px solid #e0ddf5;border-radius:14px;padding:18px}
+.rec-cat{font-size:11px;font-weight:700;color:#6c5ce7;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px}
+.rec-card h4{font-size:14px;font-weight:600;margin-bottom:10px}
+.rec-list{list-style:none}
+.rec-list li{font-size:13px;color:#4a4a6a;padding:4px 0;border-bottom:1px solid #f0eef8;display:flex;gap:7px;align-items:center}
+.rec-list li:last-child{border:none}
+.rec-list li::before{content:"•";color:#6c5ce7;font-size:16px;flex-shrink:0}
+.reset-btn{display:block;width:100%;padding:13px;background:transparent;border:2px solid #e0ddf5;border-radius:12px;font-size:14px;font-weight:500;color:#4a4a6a;cursor:pointer;transition:all .15s}
+.reset-btn:hover{border-color:#6c5ce7;color:#6c5ce7}
+footer{text-align:center;padding:32px 20px;font-size:12px;color:#4a4a6a;border-top:1px solid #e0ddf5;margin-top:48px}
+footer strong{color:#1a1a2e}
+</style>
+</head>
+<body>
+<header>
+  <div style="font-size:26px">🔬</div>
+  <div>
+    <h1>Face Shape Analyzer</h1>
+    <p>EfficientNetV2S · dlib Landmarks · Anthropometric Validation · Personalized Recommendations</p>
+  </div>
+</header>
+
+<div class="page">
+  <div class="hero">
+    <h2>Discover your <em>face shape</em></h2>
+    <p>Upload a clear front-facing photo. The system classifies your face using deep learning and recommends haircuts, eyeglasses, and earrings.</p>
+  </div>
+
+  <div class="upload-zone" id="zone">
+    <input type="file" id="file-inp" accept="image/*">
+    <div class="icon">📷</div>
+    <h3>Drop your photo here</h3>
+    <p>Front-facing, good lighting · JPG / PNG</p>
+  </div>
+
+  <button class="btn" id="analyse-btn" onclick="runAnalysis()" disabled>Analyse Face Shape</button>
+
+  <div class="spinner" id="spinner">
+    <div class="spin"></div>
+    <p style="color:#4a4a6a;font-size:14px">Analysing face shape…</p>
+  </div>
+
+  <div id="results">
+    <div class="result-top">
+      <div class="shape-badge" id="shape-badge">🥚</div>
+      <div>
+        <h2>Predicted: <span id="r-shape">–</span></h2>
+        <div style="font-size:13px;color:#4a4a6a;margin-top:4px" id="r-conf">–</div>
+        <div class="conf-bar"><div class="conf-fill" id="conf-fill" style="width:0%"></div></div>
+      </div>
+      <div class="val-badge" id="val-badge">–</div>
+    </div>
+
+    <div class="ratios">
+      <div class="ratio-card"><div class="v" id="r-fi">–</div><div class="l">Face Index<br>(L / CW)</div></div>
+      <div class="ratio-card"><div class="v" id="r-fc">–</div><div class="l">Forehead–Cheek<br>Ratio</div></div>
+      <div class="ratio-card"><div class="v" id="r-jc">–</div><div class="l">Jaw–Cheek<br>Ratio</div></div>
+      <div class="ratio-card"><div class="v" id="r-fj">–</div><div class="l">Forehead–Jaw<br>Ratio</div></div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <img id="annotated-img" src="" alt="Annotated result">
+        <div class="card-body" style="font-size:12px;color:#4a4a6a">
+          Cyan = Face Height · Green = Cheek Width · Orange = Jaw Width
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <h3>CNN Class Probabilities</h3>
+          <div class="prob-row">
+            <div class="prob-label" style="color:#00b894">Oval</div>
+            <div class="prob-track"><div class="prob-fill" id="pb-oval" style="width:0%;background:#00b894"></div></div>
+            <div class="prob-pct" id="pp-oval">–</div>
+          </div>
+          <div class="prob-row">
+            <div class="prob-label" style="color:#0984e3">Round</div>
+            <div class="prob-track"><div class="prob-fill" id="pb-round" style="width:0%;background:#0984e3"></div></div>
+            <div class="prob-pct" id="pp-round">–</div>
+          </div>
+          <div class="prob-row">
+            <div class="prob-label" style="color:#e17055">Square</div>
+            <div class="prob-track"><div class="prob-fill" id="pb-square" style="width:0%;background:#e17055"></div></div>
+            <div class="prob-pct" id="pp-square">–</div>
+          </div>
+          <div style="margin-top:20px;padding-top:16px;border-top:1px solid #e0ddf5">
+            <div style="font-size:12px;color:#4a4a6a;font-weight:600;margin-bottom:6px">ANTHROPOMETRIC</div>
+            <div style="font-size:13px" id="anthro-info">–</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <h3 style="font-size:20px;margin-bottom:4px" id="rec-title">Personalised Recommendations</h3>
+      <p style="color:#4a4a6a;font-size:13px" id="rec-sub">–</p>
+    </div>
+    <div class="rec-grid" id="rec-grid"></div>
+
+    <button class="reset-btn" onclick="resetAll()">Analyse another photo</button>
+  </div>
+</div>
+
+<footer>
+  <strong>Face Shape Analysis Using Deep Learning with Anthropometric Validation</strong><br>
+  Israt Jahan Mim · ID 0242220005101637 · Daffodil International University · 2026<br>
+  Supervised by Partha Dip Sarkar · Co-supervised by Amir Sohel
+</footer>
+
+<script>
+const EMOJI = {Oval:'🥚',Round:'🔵',Square:'🟥'};
+let selectedFile = null;
+
+const zone = document.getElementById('zone');
+const inp  = document.getElementById('file-inp');
+const btn  = document.getElementById('analyse-btn');
+
+zone.addEventListener('dragover', e=>{e.preventDefault();zone.classList.add('drag')});
+zone.addEventListener('dragleave', ()=>zone.classList.remove('drag'));
+zone.addEventListener('drop', e=>{
+  e.preventDefault(); zone.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if(f && f.type.startsWith('image/')) setFile(f);
+});
+inp.addEventListener('change', ()=>{ if(inp.files[0]) setFile(inp.files[0]); });
+
+function setFile(f){
+  selectedFile = f;
+  zone.querySelector('h3').textContent = f.name;
+  zone.querySelector('p').textContent  = (f.size/1024/1024).toFixed(1)+' MB';
+  btn.disabled = false;
+}
+
+async function runAnalysis(){
+  if(!selectedFile) return;
+  btn.disabled = true;
+  document.getElementById('spinner').style.display = 'block';
+  document.getElementById('results').style.display = 'none';
+
+  const form = new FormData();
+  form.append('file', selectedFile);
+
+  try {
+    const resp = await fetch('/analyze', {method:'POST', body: form});
+    const data = await resp.json();
+    showResults(data);
+  } catch(e) {
+    alert('Error: '+e.message);
+    btn.disabled = false;
+  }
+  document.getElementById('spinner').style.display = 'none';
+}
+
+function showResults(d){
+  document.getElementById('r-shape').textContent = d.shape;
+  document.getElementById('r-conf').textContent  = `CNN Confidence: ${d.confidence}%`;
+  const badge = document.getElementById('shape-badge');
+  badge.textContent = EMOJI[d.shape] || '🔬';
+  badge.className   = `shape-badge ${d.shape}`;
+  setTimeout(()=>{ document.getElementById('conf-fill').style.width = d.confidence+'%'; },100);
+
+  const vb = document.getElementById('val-badge');
+  vb.textContent = d.validation==='Supported' ? '✓ Anthropometrically Supported' : '✗ Not Supported';
+  vb.className   = 'val-badge '+(d.validation==='Supported'?'s':'n');
+
+  const r = d.ratios||{};
+  document.getElementById('r-fi').textContent = r.face_index        ?? '–';
+  document.getElementById('r-fc').textContent = r.forehead_to_cheek ?? '–';
+  document.getElementById('r-jc').textContent = r.jaw_to_cheek      ?? '–';
+  document.getElementById('r-fj').textContent = r.forehead_to_jaw   ?? '–';
+
+  if(d.annotated_image){
+    document.getElementById('annotated-img').src = 'data:image/jpeg;base64,'+d.annotated_image;
+  }
+
+  setTimeout(()=>{
+    const p = d.probs||{};
+    for(const [cls,id] of [['Oval','oval'],['Round','round'],['Square','square']]){
+      document.getElementById(`pb-${id}`).style.width = (p[cls]||0)+'%';
+      document.getElementById(`pp-${id}`).textContent = (p[cls]||0)+'%';
+    }
+  },150);
+
+  document.getElementById('anthro-info').innerHTML =
+    `Geometric class: <strong>${d.geo}</strong><br>Validation: <strong>${d.validation}</strong><br><em>ŷ_Final = ŷ_CNN</em>`;
+
+  document.getElementById('rec-title').textContent = 'Personalised Recommendations';
+  document.getElementById('rec-sub').textContent   = `Based on your ${d.shape} face shape`;
+  buildRecs(d.shape, d.recommendations||{});
+
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({behavior:'smooth'});
+}
+
+function buildRecs(shape, rec){
+  const grid = document.getElementById('rec-grid');
+  grid.innerHTML = '';
+  for(const [cat, emoji] of [['Haircuts','💇'],['Eyeglasses','👓'],['Earrings','💎']]){
+    const items = rec[cat]||[];
+    const card  = document.createElement('div');
+    card.className = 'rec-card';
+    card.innerHTML = `
+      <div class="rec-cat">${emoji} ${cat}</div>
+      <h4>Best for ${shape} faces</h4>
+      <ul class="rec-list">${items.map(i=>`<li>${i}</li>`).join('')}</ul>`;
+    grid.appendChild(card);
+  }
+}
+
+function resetAll(){
+  selectedFile = null;
+  inp.value    = '';
+  btn.disabled = true;
+  zone.querySelector('h3').textContent = 'Drop your photo here';
+  zone.querySelector('p').textContent  = 'Front-facing, good lighting · JPG / PNG';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('conf-fill').style.width = '0%';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
