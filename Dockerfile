@@ -10,8 +10,18 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+
+# Install exact versions to avoid conflicts
+RUN pip install --no-cache-dir \
+    tensorflow-cpu==2.15.0 \
+    "gradio==3.50.2" \
+    "huggingface_hub==0.19.4" \
+    opencv-python-headless \
+    dlib \
+    scikit-learn \
+    numpy \
+    Pillow \
+    joblib
 
 COPY . .
 
