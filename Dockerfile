@@ -11,17 +11,12 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Install exact versions to avoid conflicts
-RUN pip install --no-cache-dir \
-    tensorflow-cpu==2.15.0 \
-    "gradio==3.50.2" \
-    "huggingface_hub==0.19.4" \
-    opencv-python-headless \
-    dlib \
-    scikit-learn \
-    numpy \
-    Pillow \
-    joblib
+RUN pip install --no-cache-dir --upgrade pip
+
+RUN pip install --no-cache-dir "huggingface_hub==0.19.4"
+RUN pip install --no-cache-dir "gradio==3.50.2"
+RUN pip install --no-cache-dir "tensorflow-cpu==2.15.0"
+RUN pip install --no-cache-dir opencv-python-headless dlib scikit-learn numpy Pillow joblib
 
 COPY . .
 
